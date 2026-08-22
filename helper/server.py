@@ -78,14 +78,41 @@ def find_ffmpeg():
 # Construction des options yt-dlp
 # ---------------------------------------------------------------------------
 
+def build_audio_selector(opts, prefer_aac):
+    """Selecteur de piste audio, avec la langue demandee en priorite.
+
+    La langue est portee par le format lui-meme : une video doublee expose
+    une piste par langue, chacune avec son champ "language". C'est donc au
+    selecteur de format de trancher, et non aux options de l'extracteur.
+    Le "^=" permet a un code court comme "zh" d'attraper "zh-Hans".
+    """
+    lang = (opts.get("audio_language") or "").strip()
+    parts = []
+
+    if lang:
+        if prefer_aac:
+            parts.append("bestaudio[language^=%s][acodec^=mp4a]" % lang)
+        parts.append("bestaudio[language^=%s]" % lang)
+
+    # Repli sans contrainte de langue : mieux vaut la mauvaise piste qu'un
+    # echec, la liste proposee venant de toute facon des langues reelles.
+    if prefer_aac:
+        parts.append("bestaudio[acodec^=mp4a]")
+    parts.append("bestaudio")
+
+    return "(" + "/".join(parts) + ")"
+
+
 def build_format(opts):
     """Traduit les choix de l'interface en selecteur de format yt-dlp."""
     if opts.get("mode", "video") == "audio":
+        lang = (opts.get("audio_language") or "").strip()
         # "Basse qualite" dans le selecteur de la page : le plus petit flux
         # audio disponible, utile pour un podcast ou une conference.
-        if opts.get("audio_pref") == "low":
-            return "worstaudio/worst"
-        return "bestaudio/best"
+        best = "worstaudio" if opts.get("audio_pref") == "low" else "bestaudio"
+        if lang:
+            return "%s[language^=%s]/%s/best" % (best, lang, best)
+        return "%s/best" % best
 
     height = opts.get("height")
     container = opts.get("container", "mp4")
@@ -102,8 +129,8 @@ def build_format(opts):
     # avec des "/", donc un "/" nu dans le selecteur audio creerait une
     # alternative parasite. Sans elles, l'echec d'une branche video fait
     # retomber yt-dlp sur "bestaudio" seul et produit un fichier sans image.
-    audio = ("(bestaudio[acodec^=mp4a]/bestaudio)"
-             if container == "mp4" and codec_pref != "small" else "bestaudio")
+    audio = build_audio_selector(
+        opts, prefer_aac=container == "mp4" and codec_pref != "small")
 
     if not height or height == "best":
         chain = ["bestvideo*%s+%s" % (c, audio) for c in codecs]
@@ -146,6 +173,12 @@ def build_format(opts):
 
 
 FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+# Palier de qualite accole au nom de la langue : "Russian, medium",
+# "English original (default), low"...
+QUALITY_TIER = re.compile(
+    r"\s*,?\s*\b(ultralow|low|medium|high|ultrahigh)\b\s*$|\s*\(default\)",
+    re.IGNORECASE)
 
 
 def build_ydl_opts(opts, job_id=None):
@@ -202,9 +235,10 @@ def build_ydl_opts(opts, job_id=None):
         ydl["merge_output_format"] = opts.get("container", "mp4")
         ydl["postprocessors"].append({"key": "FFmpegMetadata"})
 
-    if opts.get("audio_language"):
-        # Piste audio doublee (fonction multi-langue de YouTube)
-        ydl["extractor_args"] = {"youtube": {"lang": [opts["audio_language"]]}}
+    # La langue de la piste audio n'est PAS reglee ici : cette option
+    # d'extracteur ne pilote que la langue des metadonnees (titre, description)
+    # et n'a aucun effet sur le son telecharge. Le choix se fait dans le
+    # selecteur de format, via build_audio_selector().
 
     if opts.get("subtitles"):
         ydl["writesubtitles"] = True
@@ -738,10 +772,19 @@ def summarize(info, codec_pref="compat", ydl=None, container="mp4"):
     heights = sorted({f.get("height") for f in (info.get("formats") or [])
                       if f.get("height")}, reverse=True)
 
+    # Une video doublee expose une piste par langue ET par palier de qualite :
+    # le libelle brut ressemble a "Russian, medium". On retire le palier, qui
+    # n'a rien a faire dans un menu de choix de langue.
     languages = {}
     for f in info.get("formats") or []:
-        if f.get("acodec") not in (None, "none") and f.get("language"):
-            languages[f["language"]] = f.get("format_note") or f["language"]
+        if f.get("acodec") in (None, "none") or not f.get("language"):
+            continue
+        code = f["language"]
+        label = QUALITY_TIER.sub("", f.get("format_note") or "").strip(" ,")
+        # On garde le libelle le plus court : "English original" plutot que
+        # "English original (default)".
+        if code not in languages or (label and len(label) < len(languages[code])):
+            languages[code] = label or code
 
     return {
         "playlist": False,
