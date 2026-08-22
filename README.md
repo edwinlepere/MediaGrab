@@ -180,6 +180,25 @@ Oui, en indiquant votre navigateur dans le réglage *Cookies du navigateur*. **F
 </details>
 
 <details>
+<summary><strong>Le fichier n'a pas de son</strong></summary>
+
+<br>
+
+**Ouvrez-le d'abord dans VLC.** Si le son est présent, le fichier est bon et le problème vient du lecteur.
+
+L'application *Films et TV* de Windows s'appuie sur les décodeurs installés dans le système, et reste parfois muette sur des fichiers pourtant valides. VLC embarque les siens : il ne dépend de rien, ce qui en fait la référence pour vérifier un téléchargement.
+
+Le cas se produit notamment sur les pistes audio doublées. Pour lever le doute, cette commande affiche la langue et le niveau sonore réels du fichier :
+
+```
+ffmpeg -i "votre-fichier.mp4" -af volumedetect -f null NUL
+```
+
+Un `mean_volume` autour de -20 dB indique une piste normale. Seul `-91 dB` signale un silence réel.
+
+</details>
+
+<details>
 <summary><strong>Le fichier n'est pas au format demandé</strong></summary>
 
 <br>
