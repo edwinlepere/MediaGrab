@@ -212,6 +212,6 @@ Restez sur vos propres contenus, les œuvres sous licence libre, et l'usage stri
 
 ## Licence
 
-MIT — voir [LICENSE](public/LICENSE).
+MIT — voir [LICENSE](LICENSE).
 
 yt-dlp (Unlicense) et ffmpeg (LGPL/GPL) sont téléchargés à l'installation, pas redistribués ici, et restent soumis à leurs licences respectives.
