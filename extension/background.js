@@ -178,34 +178,67 @@ function classify(url, resourceType) {
   return null;
 }
 
+/** Type de flux d'apres l'en-tete Content-Type.
+ *
+ *  Indispensable : beaucoup de sites — TikTok en tete — servent leurs videos
+ *  depuis des adresses sans extension, que le classement par nom de fichier
+ *  laisse passer. Le serveur, lui, declare toujours ce qu'il envoie.
+ */
+function classifyByType(contentType) {
+  const type = (contentType || "").toLowerCase();
+  if (type.includes("mpegurl")) return "HLS";
+  if (type.includes("dash+xml")) return "DASH";
+  // video/mp2t est un segment de flux HLS, pas un fichier telechargeable
+  if (type.startsWith("video/mp2t")) return null;
+  if (type.startsWith("video/") || type.startsWith("audio/")) return "HTTP";
+  return null;
+}
+
+function record(tabId, url, kind) {
+  let forTab = streams.get(tabId);
+  if (!forTab) {
+    forTab = new Map();
+    streams.set(tabId, forTab);
+  }
+  if (forTab.has(url)) return;
+
+  // Les plus anciens sautent en premier : sur une page longue, ce qui vient
+  // d'etre lance interesse plus que ce qui a defile il y a dix minutes.
+  if (forTab.size >= MAX_PER_TAB) {
+    forTab.delete(forTab.keys().next().value);
+  }
+
+  let name = "";
+  try {
+    name = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
+  } catch {}
+
+  forTab.set(url, { url, kind, name, at: Date.now() });
+}
+
 chrome.webRequest.onBeforeRequest.addListener(
   ({ tabId, url, type }) => {
     if (tabId < 0 || !/^https?:/i.test(url)) return;
-
     const kind = classify(url, type);
-    if (!kind) return;
-
-    let forTab = streams.get(tabId);
-    if (!forTab) {
-      forTab = new Map();
-      streams.set(tabId, forTab);
-    }
-    if (forTab.has(url)) return;
-
-    // Les plus anciens sautent en premier : sur une page longue, ce qui vient
-    // d'etre lance interesse plus que ce qui a defile il y a dix minutes.
-    if (forTab.size >= MAX_PER_TAB) {
-      forTab.delete(forTab.keys().next().value);
-    }
-
-    let name = "";
-    try {
-      name = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
-    } catch {}
-
-    forTab.set(url, { url, kind, name, at: Date.now() });
+    if (kind) record(tabId, url, kind);
   },
   { urls: ["<all_urls>"] }
+);
+
+// Second filet, sur la reponse cette fois : rattrape tout ce que l'adresse
+// seule ne trahissait pas.
+chrome.webRequest.onHeadersReceived.addListener(
+  ({ tabId, url, responseHeaders }) => {
+    if (tabId < 0 || !/^https?:/i.test(url) || SEGMENT_RE.test(url)) return;
+
+    const header = (responseHeaders || []).find(
+      (h) => h.name.toLowerCase() === "content-type"
+    );
+    const kind = classifyByType(header?.value);
+    if (kind) record(tabId, url, kind);
+  },
+  { urls: ["<all_urls>"] },
+  ["responseHeaders"]
 );
 
 // Une navigation remet le compteur a zero : les flux de la page precedente
