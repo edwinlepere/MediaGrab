@@ -202,26 +202,6 @@ Journal du service worker : `chrome://extensions` → MediaGrab → *Inspecter l
 
 ---
 
-## Construire depuis les sources
-
-```
-public\build.bat
-```
-
-Installe PyInstaller et yt-dlp, copie `helper\server.py`, produit `dist\mediagrab.exe` (environ 27 Mo). ffmpeg n'est pas embarqué : il est téléchargé à l'installation, ce qui garde l'exécutable léger et évite de redistribuer des binaires sous licence distincte.
-
-Pour développer sans empaqueter, `helper\install.bat` utilise le Python du système et charge l'extension depuis `extension\`.
-
-```
-extension/     extension MV3 : manifeste, service worker, content script, popup, options
-helper/        server.py, source unique du serveur, plus les scripts de développement
-public/        mediagrab.py (installateur), build.bat, make_shots.py, captures
-```
-
-`make_shots.py` régénère les captures de ce README à partir des feuilles de style réelles, via Chrome en mode headless.
-
----
-
 ## Portée légale
 
 Outil personnel. Télécharger depuis ces sites contrevient le plus souvent à leurs conditions d'utilisation ; selon le pays, la copie privée d'une œuvre à laquelle on accède légalement relève d'une exception au droit d'auteur.
