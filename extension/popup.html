@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>MediaGrab</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <header class="head">
+    <h1>MediaGrab</h1>
+    <span id="status" class="status status--unknown" title="Etat du serveur local">…</span>
+  </header>
+
+  <!-- Serveur local eteint -->
+  <section id="offline" class="panel panel--warn" hidden>
+    <p><strong>Serveur local injoignable.</strong></p>
+    <p>Lance <code>install.bat</code> dans le dossier <code>helper</code>, puis clique sur Reessayer.</p>
+    <button id="retry" class="btn btn--primary">Reessayer</button>
+  </section>
+
+  <main id="main" hidden>
+
+    <section class="video" id="video" hidden>
+      <img id="thumb" alt="">
+      <div class="video__meta">
+        <p id="title" class="video__title" contenteditable="true"
+           spellcheck="false" title="Cliquer pour renommer le fichier"></p>
+        <p id="uploader" class="video__sub"></p>
+      </div>
+    </section>
+
+    <section class="streams" id="streams" hidden>
+      <p class="streams__head" id="streamsHead">Flux detectes sur cette page</p>
+      <div id="streamList"></div>
+    </section>
+
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-mode="video" role="tab">Video</button>
+      <button class="tab" data-mode="audio" role="tab">Audio</button>
+    </div>
+
+    <section class="opts" id="opts-video">
+      <label class="field">
+        <span>Qualite</span>
+        <select id="height">
+          <option value="best">La meilleure disponible</option>
+          <option value="2160">2160p (4K)</option>
+          <option value="1440">1440p</option>
+          <option value="1080" selected>1080p</option>
+          <option value="720">720p</option>
+          <option value="480">480p</option>
+          <option value="360">360p</option>
+          <option value="240">240p</option>
+          <option value="144">144p (minimum)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Conteneur</span>
+        <select id="container">
+          <option value="mp4" selected>MP4 (compatible partout)</option>
+          <option value="mkv">MKV (garde AV1/VP9)</option>
+          <option value="webm">WebM</option>
+        </select>
+      </label>
+
+      <label class="field" id="langField" hidden>
+        <span>Langue audio</span>
+        <select id="audioLanguage"></select>
+      </label>
+    </section>
+
+    <section class="opts" id="opts-audio" hidden>
+      <label class="field">
+        <span>Format</span>
+        <select id="audioFormat">
+          <option value="mp3" selected>MP3</option>
+          <option value="m4a">M4A (AAC)</option>
+          <option value="opus">Opus</option>
+          <option value="flac">FLAC (sans perte)</option>
+          <option value="wav">WAV</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Debit</span>
+        <select id="audioQuality">
+          <option value="320">320 kbps</option>
+          <option value="192" selected>192 kbps</option>
+          <option value="128">128 kbps</option>
+          <option value="0">Qualite maximale (VBR)</option>
+        </select>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" id="embedThumbnail" checked>
+        <span>Integrer la miniature comme pochette</span>
+      </label>
+    </section>
+
+    <section class="opts opts--extra">
+      <label class="check">
+        <input type="checkbox" id="subtitles">
+        <span>Sous-titres (.srt)</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="sponsorblock">
+        <span>Couper les segments sponsorises</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="playlist">
+        <span>Telecharger toute la playlist</span>
+      </label>
+    </section>
+
+    <button id="go" class="btn btn--primary btn--wide">Telecharger</button>
+
+    <section class="jobs" id="jobs"></section>
+
+    <footer class="foot">
+      <button id="openFolder" class="link">Ouvrir le dossier</button>
+      <button id="openOptions" class="link">Reglages</button>
+    </footer>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

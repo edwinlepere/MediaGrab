@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# Artefacts de construction
+# ---------------------------------------------------------------------------
+# L'executable pese 27 Mo : il se distribue par une Release GitHub, jamais par
+# le depot. Un binaire commite reste dans l'historique pour toujours.
+public/build/
+public/dist/
+public/*.spec
+
+# Copie generee au moment de construire : la source est helper/server.py
+public/server.py
+
+# ffmpeg, telecharge a l'installation
+ffmpeg/
+*.exe
+*.dll
+
+# ---------------------------------------------------------------------------
+# Etat local, propre a chaque machine
+# ---------------------------------------------------------------------------
+config.json
+error.log
+*.log
+
+# Apercus et maquettes temporaires
+apercu-*.html
+public/screenshots/*.html
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---------------------------------------------------------------------------
+# Editeurs et systeme
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+desktop.ini
+.DS_Store

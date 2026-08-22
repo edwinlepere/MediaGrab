@@ -1,0 +1,353 @@
+/* --- Shorts ---------------------------------------------------------------
+   Bouton rond ajoute en tete de la colonne d'actions verticale, au dessus de
+   J'aime. Il reprend le gabarit des boutons natifs (cercle de 48 px surmonte
+   d'un libelle) pour ne pas jurer avec la pile existante. */
+
+.ytg-short {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  font-family: "Roboto", "Arial", sans-serif;
+}
+
+html.mediagrab-hidden .ytg-short {
+  display: none;
+}
+
+.ytg-short__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: #3ea6ff;
+  color: #0a0a0a;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.ytg-short__btn:hover:not(:disabled) {
+  background: #63b8ff;
+}
+
+.ytg-short__btn:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.ytg-short__btn:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.ytg-short__label {
+  margin-top: 6px;
+  max-width: 72px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  color: #f1f1f1;
+}
+
+.ytg-short[data-state="done"] .ytg-short__btn { background: #0f9d58; color: #fff; }
+.ytg-short[data-state="error"] .ytg-short__btn { background: #cc0000; color: #fff; }
+
+/* Barre de telechargement inseree sous le lecteur YouTube.
+   Palette calquee sur le theme sombre de YouTube, avec variante claire. */
+
+.ytg-wrap {
+  --ytg-bg: #f2f2f2;
+  --ytg-bg-hi: #ffffff;
+  --ytg-fg: #0f0f0f;
+  --ytg-muted: #606060;
+  --ytg-line: #d9d9d9;
+  --ytg-accent: #3ea6ff;
+  --ytg-accent-fg: #ffffff;
+  --ytg-ok: #0f9d58;
+  --ytg-err: #cc0000;
+
+  position: relative;
+  /* Barre compacte alignee a gauche, et non etiree sur toute la largeur
+     de la colonne : elle doit rester discrete sous le lecteur. */
+  max-width: 470px;
+  margin: 12px 0 16px;
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 13px;
+  color: var(--ytg-fg);
+}
+
+html[dark] .ytg-wrap,
+[dark] .ytg-wrap {
+  --ytg-bg: #1f1f1f;
+  --ytg-bg-hi: #2f2f2f;
+  --ytg-fg: #f1f1f1;
+  --ytg-muted: #aaaaaa;
+  --ytg-line: #3f3f3f;
+}
+
+html.mediagrab-hidden .ytg-wrap {
+  display: none;
+}
+
+/* --- barre principale --- */
+
+.ytg-bar {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.ytg-picker {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--ytg-line);
+  border-radius: 8px;
+  background: var(--ytg-bg);
+  color: var(--ytg-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ytg-picker:hover:not(:disabled) { background: var(--ytg-bg-hi); }
+.ytg-picker:disabled { opacity: 0.6; cursor: default; }
+
+.ytg-chip {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--ytg-bg-hi);
+  border: 1px solid var(--ytg-line);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.ytg-chip sup {
+  margin-left: 2px;
+  font-size: 9px;
+  vertical-align: super;
+  opacity: 0.85;
+}
+
+/* Deux paliers : jaune au dessus du 1080p (2K, 4K, HDR), bleu pour le HD.
+   Fonds volontairement translucides - la couleur se pose sur le fond de la
+   ligne au lieu de le masquer, et reste lisible aussi bien sur la ligne
+   selectionnee que sur le theme clair. */
+.ytg-chip--hd {
+  background: rgba(62, 166, 255, 0.75);
+  border-color: transparent;
+  color: #0a0a0a;
+}
+
+.ytg-chip--uhd {
+  background: rgba(255, 199, 44, 0.75);
+  border-color: transparent;
+  color: #0a0a0a;
+}
+
+.ytg-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ytg-muted);
+}
+
+.ytg-chev {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--ytg-muted);
+}
+
+.ytg-picker[aria-expanded="false"] .ytg-chev { transform: rotate(180deg); }
+
+/* --- boutons --- */
+
+.ytg-download {
+  flex-shrink: 0;
+  /* Largeur fixe : le libelle change en cours de route (42 % / Fusion… /
+     Termine) et la barre ne doit pas se reorganiser a chaque etape. */
+  width: 104px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: var(--ytg-accent);
+  color: var(--ytg-accent-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ytg-download:hover:not(:disabled) { filter: brightness(1.1); }
+.ytg-download:disabled { opacity: 0.75; cursor: default; }
+.ytg-download.is-done { background: var(--ytg-ok); }
+
+.ytg-kebab {
+  flex-shrink: 0;
+  width: 34px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ytg-line);
+  border-radius: 8px;
+  background: var(--ytg-bg);
+  color: var(--ytg-fg);
+  cursor: pointer;
+}
+
+.ytg-kebab:hover { background: var(--ytg-bg-hi); }
+
+/* --- liste des formats, ouverte vers le haut --- */
+
+.ytg-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 2500;
+  width: min(420px, 100%);
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--ytg-line);
+  border-radius: 12px;
+  background: var(--ytg-bg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.ytg-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ytg-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ytg-item:hover { background: var(--ytg-bg-hi); }
+
+.ytg-item.is-active {
+  background: #1c62b9;
+  color: #fff;
+}
+
+.ytg-item.is-active .ytg-chip {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* La ligne selectionnee ne doit pas effacer la couleur de la pastille :
+   sinon une entree HD/2K/4K perd son repere visuel des qu'on la choisit. */
+.ytg-item.is-active .ytg-chip--hd {
+  background: rgba(62, 166, 255, 0.75);
+  color: #0a0a0a;
+}
+
+.ytg-item.is-active .ytg-chip--uhd {
+  background: rgba(255, 199, 44, 0.75);
+  color: #0a0a0a;
+}
+
+.ytg-item.is-active .ytg-text { color: #fff; }
+
+.ytg-note {
+  margin-left: auto;
+  color: var(--ytg-ok);
+  font-size: 14px;
+}
+
+.ytg-item.is-active .ytg-note { color: #8ef0bd; }
+
+/* --- menu du bouton trois points --- */
+
+.ytg-kmenu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 2500;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--ytg-line);
+  border-radius: 12px;
+  background: var(--ytg-bg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.ytg-kmenu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ytg-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ytg-kmenu button:hover { background: var(--ytg-bg-hi); }
+
+.ytg-sep {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--ytg-line);
+}
+
+/* Interrupteur AV1 : la coche occupe sa place meme eteinte, sinon le
+   libelle se decale a chaque bascule. */
+.ytg-toggle .ytg-check {
+  display: inline-block;
+  width: 16px;
+  margin-right: 6px;
+  color: var(--ytg-accent);
+  visibility: hidden;
+}
+
+.ytg-toggle.is-on .ytg-check { visibility: visible; }
+.ytg-toggle.is-on { font-weight: 600; }
+
+/* --- progression et messages --- */
+
+.ytg-progress {
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: var(--ytg-line);
+  overflow: hidden;
+}
+
+.ytg-progress__fill {
+  height: 100%;
+  width: 0;
+  background: var(--ytg-accent);
+  transition: width 0.3s ease;
+}
+
+.ytg-msg {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ytg-muted);
+}
+
+.ytg-msg--error { color: var(--ytg-err); }
+.ytg-msg--ok { color: var(--ytg-ok); }

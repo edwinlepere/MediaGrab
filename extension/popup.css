@@ -1,0 +1,351 @@
+:root {
+  --bg: #ffffff;
+  --fg: #0f0f0f;
+  --muted: #606060;
+  --line: #e5e5e5;
+  --field: #f2f2f2;
+  --accent: #cc0000;
+  --ok: #0f9d58;
+  --warn: #f4b400;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #212121;
+    --fg: #f1f1f1;
+    --muted: #aaaaaa;
+    --line: #3d3d3d;
+    --field: #303030;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 340px;
+  margin: 0;
+  padding: 12px;
+  font: 13px/1.45 "Roboto", "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* --- en-tete --- */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.head h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.status {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  font-size: 0;
+  background: var(--warn);
+}
+.status--on { background: var(--ok); }
+.status--off { background: var(--accent); }
+
+/* --- blocs --- */
+.panel {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: var(--field);
+}
+.panel p { margin: 0 0 6px; }
+.panel p:last-of-type { margin-bottom: 10px; }
+.panel--warn { border-left: 3px solid var(--accent); }
+
+code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(128, 128, 128, 0.22);
+  font-family: "Consolas", monospace;
+  font-size: 12px;
+}
+
+/* --- fiche video --- */
+.video {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.video img {
+  /* Hauteur fixe, largeur libre : une affiche de film est en 2:3, une
+     vignette de video en 16:9. Un cadre fige rognait l'une ou l'autre.
+     La largeur maximale correspond a un 16:9 a cette hauteur, ce qui garde
+     l'alignement du texte stable quel que soit le format. */
+  height: 72px;
+  width: auto;
+  max-width: 128px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--field);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.video__meta { min-width: 0; }
+
+/* Modifiable : aucune heuristique ne devinera toujours un bon nom de fichier,
+   et corriger sur place est plus rapide que renommer apres coup. Le repli en
+   bloc multiligne n'est retabli qu'hors edition, pour ne pas tronquer le
+   texte pendant la saisie. */
+.video__title {
+  margin: 0 0 2px;
+  padding: 1px 4px;
+  margin-left: -4px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: text;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.video__title:hover {
+  border-color: var(--line);
+}
+
+.video__title:focus {
+  display: block;
+  outline: none;
+  border-color: var(--accent);
+  background: var(--field);
+  overflow-wrap: anywhere;
+}
+
+.video__sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* --- flux reperes dans le trafic --- */
+
+.streams { margin-bottom: 12px; }
+
+.streams__head {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.stream {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  margin-bottom: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stream:hover:not(:disabled) { filter: brightness(1.12); }
+.stream:disabled { opacity: 0.6; cursor: default; }
+
+/* Flux vu passer mais illisible : il porte son message d'erreur et n'est pas
+   cliquable, puisqu'il n'y a rien a telecharger. */
+.stream--dead {
+  cursor: default;
+  border-style: dashed;
+}
+
+.stream--dead:hover { filter: none; }
+.stream--dead .stream__tag { opacity: 0.55; }
+.stream--dead .stream__name { color: var(--accent); }
+
+.stream__tag {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #0a0a0a;
+}
+
+/* HLS et DASH decrivent toutes les qualites d'un coup : ils valent mieux
+   qu'un fichier isole, la couleur les distingue. */
+.stream__tag--hls,
+.stream__tag--dash { background: rgba(62, 166, 255, 0.85); }
+.stream__tag--http { background: rgba(255, 199, 44, 0.85); }
+
+.stream__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* --- onglets --- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.tab {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tab.is-active {
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* --- champs --- */
+.opts { margin-bottom: 12px; }
+
+.opts--extra {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.field > span { color: var(--muted); flex-shrink: 0; }
+
+select, .input {
+  flex: 1;
+  min-width: 0;
+  max-width: 200px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+}
+
+.input { max-width: none; width: 100%; }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.check input { margin: 0; accent-color: var(--accent); }
+
+/* --- boutons --- */
+.btn {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+.btn--primary { background: var(--accent); color: #fff; }
+.btn--wide { width: 100%; }
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link:hover { color: var(--fg); }
+
+/* --- file d'attente --- */
+.jobs:not(:empty) {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.job { margin-bottom: 10px; }
+
+.job__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.job__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job__pct { color: var(--muted); flex-shrink: 0; }
+
+.bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--field);
+  overflow: hidden;
+}
+
+.bar__fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.job--done .bar__fill { background: var(--ok); width: 100%; }
+.job--error .bar__fill { background: var(--accent); width: 100%; }
+.job--error .job__pct { color: var(--accent); }
+
+/* --- pied --- */
+.foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}

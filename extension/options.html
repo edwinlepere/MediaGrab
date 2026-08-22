@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Reglages MediaGrab</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body { width: auto; max-width: 620px; margin: 0 auto; padding: 32px 24px; }
+    h2 { margin: 28px 0 12px; font-size: 14px; text-transform: uppercase;
+         letter-spacing: 0.6px; color: var(--muted); }
+    .field { display: block; margin-bottom: 14px; }
+    .field > span { display: block; margin-bottom: 4px; color: var(--fg); }
+    .field small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    select, .input { max-width: none; width: 100%; }
+    .saved { margin-left: 10px; color: var(--ok); opacity: 0; transition: opacity .2s; }
+    .saved.is-visible { opacity: 1; }
+    .row { display: flex; align-items: center; }
+  </style>
+</head>
+<body>
+
+  <header class="head">
+    <h1>Reglages MediaGrab</h1>
+    <span id="status" class="status status--unknown"></span>
+  </header>
+
+  <h2>Serveur local</h2>
+
+  <label class="field">
+    <span>Dossier de destination</span>
+    <input id="output_dir" class="input" type="text" spellcheck="false">
+    <small>Chemin complet, par exemple <code>D:\Videos\YouTube</code></small>
+  </label>
+
+  <label class="field">
+    <span>Modele de nom de fichier</span>
+    <input id="filename_template" class="input" type="text" spellcheck="false">
+    <small>Syntaxe yt-dlp. Par defaut : <code>%(title)s [%(id)s].%(ext)s</code></small>
+  </label>
+
+  <label class="field">
+    <span>Cookies du navigateur</span>
+    <select id="cookies_from_browser">
+      <option value="">Aucun</option>
+      <option value="chrome">Chrome</option>
+      <option value="edge">Edge</option>
+      <option value="firefox">Firefox</option>
+      <option value="brave">Brave</option>
+      <option value="opera">Opera</option>
+      <option value="vivaldi">Vivaldi</option>
+    </select>
+    <small>Necessaire pour les videos privees, reservees aux membres ou 18+.
+      Ferme le navigateur concerne avant le telechargement, sinon le fichier de
+      cookies est verrouille.</small>
+  </label>
+
+  <label class="field">
+    <span>Dossier de ffmpeg</span>
+    <input id="ffmpeg_location" class="input" type="text" spellcheck="false"
+           placeholder="laisser vide = recherche dans le PATH">
+    <small>Exemple : <code>C:\ffmpeg\bin</code></small>
+  </label>
+
+  <label class="field">
+    <span>Fragments telecharges en parallele</span>
+    <select id="concurrent_fragments">
+      <option value="1">1 (connexion lente)</option>
+      <option value="4" selected>4 (recommande)</option>
+      <option value="8">8</option>
+      <option value="16">16 (fibre)</option>
+    </select>
+  </label>
+
+  <h2>Extension</h2>
+
+  <label class="field">
+    <span>Codec video</span>
+    <select id="codec_pref">
+      <option value="compat">Compatibilite maximale - H.264</option>
+      <option value="small">Fichiers legers - AV1 puis VP9</option>
+    </select>
+    <small>A resolution egale, AV1 pese 3 a 5 fois moins que H.264 : un 4K
+      passe d'environ 3,5 Go a 700 Mo. En echange il exige un lecteur recent
+      (VLC, Chrome, Windows 11). H.264 se lit absolument partout, y compris
+      sur televiseur et en montage video.</small>
+  </label>
+
+  <label class="check">
+    <input type="checkbox" id="showPageButton">
+    <span>Afficher le bouton sur les pages YouTube</span>
+  </label>
+
+  <label class="check">
+    <input type="checkbox" id="notify">
+    <span>Notification de fin de telechargement</span>
+  </label>
+
+  <p style="margin-top:24px" class="row">
+    <button id="save" class="btn btn--primary">Enregistrer</button>
+    <span id="saved" class="saved">Enregistre.</span>
+  </p>
+
+  <h2>Astuces</h2>
+  <ul style="color:var(--muted); padding-left:18px; line-height:1.7">
+    <li>Sur une page video, la barre sous le lecteur donne resolution, images
+      par seconde et poids estime avant de telecharger.</li>
+    <li>Hors YouTube, l'icone de la barre d'outils analyse la page ; si rien
+      n'y est trouve, les flux vus passer dans le trafic prennent le relais.</li>
+    <li>Le nom affiche est modifiable : il devient celui du fichier.</li>
+    <li>Quand un site casse quelque chose, relancer l'installateur met yt-dlp
+      a jour.</li>
+    <li>Le serveur n'ecoute que sur <code>127.0.0.1</code> et refuse les
+      requetes des pages web.</li>
+  </ul>
+
+  <script src="options.js"></script>
+</body>
+</html>
