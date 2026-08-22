@@ -18,7 +18,7 @@
 
 - **Vidéo jusqu'en 4K** — la barre sous le lecteur annonce résolution, images par seconde et poids estimé avant que vous ne choisissiez
 - **Extraction audio** — MP3, M4A, Opus, FLAC ou WAV, jusqu'à 320 kbps, miniature intégrée en pochette
-- **Plus de 1700 sites** — YouTube, Vimeo, Dailymotion, X, TikTok, Twitch, Arte, france.tv, SoundCloud, Reddit… et un extracteur générique pour le reste
+- **Plus de 1700 sites** — YouTube, Vimeo, Dailymotion, X, Twitch, Arte, france.tv, SoundCloud, Reddit… et un extracteur générique pour le reste
 - **Détection des flux** — les vidéos chargées en JavaScript, invisibles dans le HTML, sont repérées dans le trafic réseau (HLS, DASH, fichiers directs)
 - **Shorts** — un bouton dédié dans la colonne d'actions
 - **Fichiers légers (AV1)** — un interrupteur qui divise le poids par trois à cinq à résolution égale
@@ -136,6 +136,17 @@ L'extension demande l'accès à tous les sites, indispensable pour observer le t
 ---
 
 ## FAQ
+
+<details>
+<summary><strong>Quels sites ne fonctionnent pas ?</strong></summary>
+
+<br>
+
+**Les plateformes par abonnement** — Netflix, Disney+, Prime Video, Canal+, Spotify… Leurs flux sont chiffrés par un verrou matériel (DRM) que seul le navigateur peut déchiffrer, dans une zone mémoire inaccessible aux programmes extérieurs. Ce n'est pas une lacune de l'outil : aucun téléchargeur ne le contourne, et le contournement de ces protections est un délit en France comme dans la plupart des pays. Ces sites ne seront jamais pris en charge.
+
+**TikTok** — non pris en charge pour le moment. Le fil vertical ne donne aucune adresse de vidéo exploitable, et la détection reste trop instable pour être proposée.
+
+</details>
 
 <details>
 <summary><strong>Faut-il laisser une fenêtre ouverte ?</strong></summary>

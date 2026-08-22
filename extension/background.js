@@ -180,9 +180,9 @@ function classify(url, resourceType) {
 
 /** Type de flux d'apres l'en-tete Content-Type.
  *
- *  Indispensable : beaucoup de sites — TikTok en tete — servent leurs videos
- *  depuis des adresses sans extension, que le classement par nom de fichier
- *  laisse passer. Le serveur, lui, declare toujours ce qu'il envoie.
+ *  Indispensable : beaucoup de sites servent leurs videos depuis des adresses
+ *  sans extension de fichier, que le classement par nom laisse passer.
+ *  Le serveur, lui, declare toujours ce qu'il envoie.
  */
 function classifyByType(contentType) {
   const type = (contentType || "").toLowerCase();
