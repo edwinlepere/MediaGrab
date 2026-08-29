@@ -285,6 +285,7 @@ select, .input {
 .btn:disabled { opacity: 0.6; cursor: default; }
 
 .btn--primary { background: var(--accent); color: #fff; }
+.btn--stop { background: #7b0000; }
 .btn--wide { width: 100%; }
 
 .link {

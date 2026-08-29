@@ -49,7 +49,7 @@ JOBS_LOCK = threading.Lock()
 CANCEL_EVENTS = {}  # job_id -> threading.Event
 
 
-class RecordingStopped(Exception):
+class RecordingStopped(BaseException):
     pass
 
 
@@ -237,7 +237,16 @@ def build_ydl_opts(opts, job_id=None):
             ydl["writethumbnail"] = True
             ydl["postprocessors"].append({"key": "EmbedThumbnail"})
     else:
-        ydl["merge_output_format"] = opts.get("container", "mp4")
+        container = opts.get("container", "mp4")
+        if opts.get("is_live"):
+            # MP4 sans atome moov final (ecrit apres coup par ffmpeg) est
+            # completement illisible si ffmpeg est tue en cours de route.
+            # MKV ecrit son index au fur et a mesure : le fichier reste
+            # lisible jusqu'au point de coupure.  nopart supprime le
+            # suffixe ".part" pour eviter les icones blanches dans l'Explorer.
+            container = "mkv"
+            ydl["nopart"] = True
+        ydl["merge_output_format"] = container
         ydl["postprocessors"].append({"key": "FFmpegMetadata"})
 
     # La langue de la piste audio n'est PAS reglee ici : cette option
@@ -316,14 +325,61 @@ def make_pp_hook(job_id):
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
+def _kill_ffmpeg_children():
+    """Kill any ffmpeg.exe that is a direct child of this server process.
+
+    Quand yt-dlp enregistre un direct via ffmpeg (sous-processus externe),
+    le progress hook Python ne se declenche pas : RecordingStopped ne peut
+    donc jamais etre leve. On tue alors ffmpeg directement.
+
+    Arret en deux temps : signal gracieux d'abord (laisse ffmpeg fermer le
+    container MKV proprement), puis kill force si toujours en vie.
+    """
+    if sys.platform != "win32":
+        return
+    my_pid = os.getpid()
+    # Etape 1 : arret gracieux via taskkill sans /F (envoie WM_CLOSE /
+    # CTRL_BREAK selon le type de processus).
+    graceful = (
+        f"Get-CimInstance Win32_Process -Filter \"Name LIKE '%ffmpeg%'\" "
+        f"| Where-Object {{ $_.ParentProcessId -eq {my_pid} }} "
+        f"| ForEach-Object {{ & taskkill /PID $_.ProcessId 2>$null }}"
+    )
+    # Etape 2 : force apres 2 s si toujours en vie.
+    forced = (
+        f"Get-CimInstance Win32_Process -Filter \"Name LIKE '%ffmpeg%'\" "
+        f"| Where-Object {{ $_.ParentProcessId -eq {my_pid} }} "
+        f"| ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force "
+        f"-ErrorAction SilentlyContinue }}"
+    )
+    try:
+        subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", graceful],
+            capture_output=True, timeout=5,
+        )
+        time.sleep(2)
+        subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", forced],
+            capture_output=True, timeout=5,
+        )
+    except Exception:
+        pass
+
+
 def run_job(job_id, url, opts):
-    CANCEL_EVENTS[job_id] = threading.Event()
-    # yt-dlp enregistre les directs via ffmpeg en sous-processus ; le progress
-    # hook peut ne jamais etre appele avec "downloading" pendant l'enregistrement.
-    # On passe donc en "downloading" immediatement pour que le bouton stop
-    # apparaisse des le debut.
-    if opts.get("is_live"):
+    cancel_event = threading.Event()
+    CANCEL_EVENTS[job_id] = cancel_event
+    is_live = opts.get("is_live")
+    if is_live:
         update_job(job_id, state="downloading", percent=None)
+        # Second mecanisme d'arret pour les directs : quand yt-dlp delegue
+        # l'enregistrement a ffmpeg (sous-processus), le progress hook Python
+        # n'est pas appele et RecordingStopped ne peut pas se propager.
+        # Ce thread attend le cancel et tue ffmpeg directement.
+        def _cancel_watcher():
+            cancel_event.wait()
+            _kill_ffmpeg_children()
+        threading.Thread(target=_cancel_watcher, daemon=True).start()
     try:
         with yt_dlp.YoutubeDL(build_ydl_opts(opts, job_id)) as ydl:
             info = ydl.extract_info(url, download=True)
@@ -343,9 +399,15 @@ def run_job(job_id, url, opts):
     except RecordingStopped:
         update_job(job_id, state="done", percent=100)
     except Exception as exc:
-        update_job(job_id, state="error", error=ANSI.sub("", str(exc))[:500])
+        # Si ffmpeg a ete tue suite a un cancel, yt-dlp leve une exception
+        # generique. On la traite comme un arret normal plutot qu'une erreur.
+        if is_live and cancel_event.is_set():
+            update_job(job_id, state="done", percent=100)
+        else:
+            update_job(job_id, state="error", error=ANSI.sub("", str(exc))[:500])
     finally:
         CANCEL_EVENTS.pop(job_id, None)
+        cancel_event.set()  # Libere le thread watcher
 
 
 # ---------------------------------------------------------------------------

@@ -318,6 +318,13 @@ function chosenTitle() {
 // --- lancement --------------------------------------------------------------
 
 $("go").addEventListener("click", async () => {
+  if (activeJobId) {
+    $("go").disabled = true;
+    await send({ type: "cancel", id: activeJobId });
+    $("go").disabled = false;
+    return;
+  }
+
   if (!currentUrl) return;
 
   $("go").disabled = true;
@@ -352,6 +359,7 @@ const LABELS = {
 };
 
 let lastJobs = [];
+let activeJobId = null;
 
 function renderJobs(jobs) {
   const host = $("jobs");
@@ -424,7 +432,22 @@ function escapeHtml(str) {
 
 async function pollJobs() {
   const { data } = await send({ type: "jobs" });
-  renderJobs(data?.jobs || []);
+  const jobs = data?.jobs || [];
+  renderJobs(jobs);
+
+  const liveActive = jobs.find(
+    j => j.is_live && (j.state === "downloading" || j.state === "queued")
+  );
+  if (currentIsLive && liveActive) {
+    activeJobId = liveActive.id;
+    $("go").textContent = "■ Arrêter l'enregistrement";
+    $("go").classList.add("btn--stop");
+  } else {
+    activeJobId = null;
+    if (currentIsLive) $("go").textContent = "Enregistrer le direct";
+    $("go").classList.remove("btn--stop");
+  }
+
   setTimeout(pollJobs, 600);
 }
 
