@@ -121,7 +121,7 @@ chrome.notifications.onClicked.addListener(async (id) => {
 
 // --- lancement d'un telechargement ------------------------------------------
 
-async function startDownload({ url, title, referer, titleHint, overrides = {} }) {
+async function startDownload({ url, title, referer, titleHint, is_live = false, overrides = {} }) {
   const settings = await getSettings();
   const payload = {
     url,
@@ -132,6 +132,7 @@ async function startDownload({ url, title, referer, titleHint, overrides = {} })
     // Et son manifeste ne porte aucun titre : on impose celui de la page,
     // sinon le fichier s'appellerait "index".
     title_hint: titleHint,
+    is_live,
     mode: settings.mode,
     height: settings.height,
     container: settings.container,
