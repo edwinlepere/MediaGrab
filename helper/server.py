@@ -46,6 +46,11 @@ DEFAULT_CONFIG = {
 
 JOBS = {}
 JOBS_LOCK = threading.Lock()
+CANCEL_EVENTS = {}  # job_id -> threading.Event
+
+
+class RecordingStopped(Exception):
+    pass
 
 
 def load_config():
@@ -279,6 +284,8 @@ def update_job(job_id, **fields):
 
 def make_progress_hook(job_id):
     def hook(d):
+        if CANCEL_EVENTS.get(job_id, threading.Event()).is_set():
+            raise RecordingStopped()
         status = d.get("status")
         if status == "downloading":
             total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
@@ -310,6 +317,13 @@ ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
 def run_job(job_id, url, opts):
+    CANCEL_EVENTS[job_id] = threading.Event()
+    # yt-dlp enregistre les directs via ffmpeg en sous-processus ; le progress
+    # hook peut ne jamais etre appele avec "downloading" pendant l'enregistrement.
+    # On passe donc en "downloading" immediatement pour que le bouton stop
+    # apparaisse des le debut.
+    if opts.get("is_live"):
+        update_job(job_id, state="downloading", percent=None)
     try:
         with yt_dlp.YoutubeDL(build_ydl_opts(opts, job_id)) as ydl:
             info = ydl.extract_info(url, download=True)
@@ -326,8 +340,12 @@ def run_job(job_id, url, opts):
 
             update_job(job_id, state="done", percent=100,
                        filepath=path, title=info.get("title"))
+    except RecordingStopped:
+        update_job(job_id, state="done", percent=100)
     except Exception as exc:
         update_job(job_id, state="error", error=ANSI.sub("", str(exc))[:500])
+    finally:
+        CANCEL_EVENTS.pop(job_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -475,10 +493,19 @@ class Handler(BaseHTTPRequestHandler):
                 JOBS[job_id] = {
                     "id": job_id, "url": url, "state": "queued", "percent": 0,
                     "title": data.get("title") or url, "created": time.time(),
+                    "is_live": bool(data.get("is_live", False)),
                 }
             threading.Thread(target=run_job, args=(job_id, url, data),
                              daemon=True).start()
             return self._send(200, {"id": job_id})
+
+        if parts.path == "/cancel":
+            job_id = data.get("id", "")
+            event = CANCEL_EVENTS.get(job_id)
+            if event:
+                event.set()
+                return self._send(200, {"ok": True})
+            return self._send(404, {"error": "tache inconnue ou deja terminee"})
 
         if parts.path == "/open":
             path = data.get("path") or CONFIG["output_dir"]

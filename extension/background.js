@@ -505,6 +505,7 @@ const handlers = {
     return call("/info", { method: "POST", body: { url, codec_pref, referer } });
   },
   download: startDownload,
+  cancel: ({ id }) => call("/cancel", { method: "POST", body: { id } }),
   openFolder: ({ path }) => call("/open", { method: "POST", body: { path } }),
   // Un content script ne peut pas ouvrir la page d'options lui-meme
   openOptions: async () => {

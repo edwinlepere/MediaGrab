@@ -10,6 +10,7 @@ let currentUrl = null;
 let currentReferer = null;
 let currentTitle = "";
 let currentMode = "video";
+let currentIsLive = false;
 
 // --- persistance des reglages ----------------------------------------------
 
@@ -164,6 +165,7 @@ async function showStreams() {
 }
 
 async function loadCurrentVideo() {
+  currentIsLive = false;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
   if (!isWebPage(tab?.url)) {
@@ -275,6 +277,7 @@ function renderInfo(data, titleOverride, poster) {
     $("langField").hidden = false;
   }
 
+  currentIsLive = !!data.is_live;
   if (data.is_live) {
     $("go").textContent = "Enregistrer le direct";
   }
@@ -330,6 +333,7 @@ $("go").addEventListener("click", async () => {
     // Uniquement pour un flux repere dans le trafic, ou quand le nom a ete
     // modifie a la main : ailleurs, le titre extrait par yt-dlp est meilleur.
     titleHint: currentReferer ? (chosenTitle() || currentTitle) : null,
+    is_live: currentIsLive,
     overrides,
   });
 
@@ -347,32 +351,65 @@ const LABELS = {
   error: "erreur",
 };
 
+let lastJobs = [];
+
 function renderJobs(jobs) {
   const host = $("jobs");
   if (!jobs.length) {
     host.innerHTML = "";
+    lastJobs = [];
     return;
   }
 
-  host.innerHTML = jobs
-    .slice(-4)
+  const visible = jobs.slice(-4);
+  lastJobs = visible;
+
+  host.innerHTML = visible
     .map((job) => {
       const pct = job.percent ?? 0;
-      const right =
-        job.state === "downloading"
+      const isDownloading = job.state === "downloading";
+      // Un direct demarre en "queued" tant que ffmpeg n'a pas encore appele
+      // le hook : on l'affiche quand meme comme "en direct".
+      const isLiveActive = job.is_live && (isDownloading || job.state === "queued");
+      const right = isLiveActive
+        ? `● En direct${job.speed ? ` · ${formatSpeed(job.speed)}` : ""}`
+        : isDownloading
           ? `${Math.round(pct)} %${job.speed ? ` · ${formatSpeed(job.speed)}` : ""}`
           : LABELS[job.state] || job.state;
+      const barWidth = isLiveActive ? 100 : pct;
+      const pctClass = isLiveActive ? "job__pct job__pct--live" : "job__pct";
       return `
         <div class="job job--${job.state}">
           <div class="job__row">
             <span class="job__name" title="${escapeHtml(job.error || job.title || "")}">${escapeHtml(job.title || "")}</span>
-            <span class="job__pct">${escapeHtml(right)}</span>
+            <span class="${pctClass}">${escapeHtml(right)}</span>
           </div>
-          <div class="bar"><div class="bar__fill" style="width:${pct}%"></div></div>
+          <div class="bar"><div class="bar__fill" style="width:${barWidth}%"></div></div>
         </div>`;
     })
     .join("");
+
+  // Ajout des boutons stop via DOM (evite d'injecter job.id dans le HTML)
+  host.querySelectorAll(".job").forEach((el, i) => {
+    const job = visible[i];
+    const isLiveActive = job?.is_live && (job.state === "downloading" || job.state === "queued");
+    if (job?.state !== "downloading" && !isLiveActive) return;
+    const row = el.querySelector(".job__row");
+    const btn = document.createElement("button");
+    btn.className = "job__stop";
+    btn.title = "Arreter l'enregistrement";
+    btn.textContent = "■";
+    btn.dataset.id = job.id;
+    row.appendChild(btn);
+  });
 }
+
+$("jobs").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".job__stop");
+  if (!btn) return;
+  btn.disabled = true;
+  await send({ type: "cancel", id: btn.dataset.id });
+});
 
 function formatSpeed(bytesPerSecond) {
   const mb = bytesPerSecond / 1048576;

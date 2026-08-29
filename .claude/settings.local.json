@@ -1,6 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__code-review-graph__semantic_search_nodes_tool",
+      "mcp__code-review-graph__get_architecture_overview_tool"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "code-review-graph"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
